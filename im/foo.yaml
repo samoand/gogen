@@ -1,0 +1,89 @@
+---
+scopes:
+  - scope: scope1
+    packages:
+      - package: foo
+        im:
+          - struct: foo1
+            extends: foo4,foo2,foo3
+            support-protobuf: true
+            props:
+              - prop: fooProp1
+                json: foo-prop-1,
+                type: string
+          - struct: foo2
+            extends: foo5
+            props:
+              - prop: fooProp2
+                type: string
+              - prop: commonProp
+                type: int
+          - struct: foo3
+            props:
+              - prop: fooProp3
+                type: string
+              - prop: commonProp
+                type: string
+          - struct: foo4
+            props:
+              - prop: fooProp4
+                type: string
+              - prop: commonProp
+                type: bool
+          - struct: foo5
+            # extends: foo2
+            props:
+              - prop: fooProp5
+                type: string
+            
+  - scope: scope2
+    packages:
+      - package: foo
+        im:
+          - struct: foo1
+            extends: foo4,foo2,foo3
+            support-protobuf: true
+            props:
+              - prop: fooProp1
+                json: foo-prop-1,
+                type: string
+          - struct: foo2
+            extends: foo5
+            props:
+              - prop: fooProp2
+                type: string
+              - prop: commonProp
+                type: int
+          - struct: foo3
+            props:
+              - prop: fooProp3
+                type: string
+              - prop: commonProp
+                type: string
+          - struct: foo4
+            props:
+              - prop: fooProp4
+                type: string
+              - prop: commonProp
+                type: bool
+          - struct: foo5
+            # extends: foo2
+            props:
+              - prop: fooProp5
+                type: string
+    
+  - scope: scope3
+    extends: scope1
+    packages:
+      - package: foo
+        im:
+          - struct: foo5
+            props:
+              - prop: fooProp5InScope3
+                type: string
+          - struct: foo6
+            extends: foo5
+            props:
+              - prop: fooProp6
+                type: string
+              

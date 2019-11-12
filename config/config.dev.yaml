@@ -1,0 +1,12 @@
+---
+log_level: DEBUG
+logtostderr: false
+alsologtostderr: true
+
+# target-specific (DNDNR)
+im_roots:
+  - "{{.DNDNR_IM_ROOT}}"
+log_dir: "{{.DNDNR_GOGEN_ROOT}}/log"
+ddn_def_path: "{{.DNDNR_GOGEN_CONFIG_ROOT}}/ddn-processors-def.yaml"
+gogen_root: "{{.DNDNR_GOGEN_ROOT}}"
+

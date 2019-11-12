@@ -1,0 +1,38 @@
+---
+pipeline:
+    - pipeline-el:
+        pmappers:
+          # read Domain DescriptoR yaml files from all im-roots
+          - imreader
+        reducer: first-mapped
+    - pipeline-el:
+        pmappers:
+          # aggregate all read Domain DescriptoR into a single
+          # Domain DescriptioN structure
+          - imagg
+        reducer: first-mapped
+    - pipeline-el:
+        pmappers:
+          - scope-merger
+    - pipeline-el:
+        pmappers:
+          - node-parents
+        reducer: first-mapped
+    - pipeline-el:
+        pmappers:
+          - init-props
+    - pipeline-el:
+        pmappers:
+          - spread-package
+    - pipeline-el:
+        pmappers:
+          - spread-type
+    - pipeline-el:
+        pmappers:
+          - inherited-props
+    - pipeline-el:
+        pmappers:
+          - go-prop-types
+    - pipeline-el:
+        pmappers:
+          - go-bubble-imports
