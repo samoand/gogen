@@ -27,8 +27,8 @@ func initPipelineFuncRepos() {
 	pmapreduce.PMapperRepo["init-props"] = astmutate.InitProps
 	pmapreduce.PMapperRepo["spread-package"] = astmutate.SpreadPackage
 	pmapreduce.PMapperRepo["spread-type"] = astmutate.SpreadType
-	pmapreduce.PMapperRepo["go-prop-types"] = targetgo.SetGolangPropTypeData("scope3")
-	pmapreduce.PMapperRepo["go-bubble-imports"] = targetgo.BubblePropImports("scope3")
+	pmapreduce.PMapperRepo["go-prop-types"] = targetgo.SetTypedElementData("scope3")
+	pmapreduce.PMapperRepo["go-bubble-imports"] = targetgo.BubbleImports("scope3")
 	pmapreduce.PMapperRepo["inherited-props"] = inheritance.BuildInheritedStructData
 
 	pmapreduce.ReducerRepo[""] = pmapreduce.ReduceToFirst

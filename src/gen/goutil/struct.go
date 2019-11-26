@@ -2,8 +2,8 @@ package goutil
 
 import (
 	"bytes"
+	"go/format"
 	"log"
-	"strconv"
 	"strings"
 	"text/template"
 
@@ -107,25 +107,91 @@ func buildStructProps(structNode gogentypes.ASTNode,
 	return decorateContent(structNode, result, "structProps", contentDecorators)
 }
 
+func buildStructMetaMethods(structNode gogentypes.ASTNode) []byte {
+	tmpl := `
+func (c *{{.}}) Kind() string {
+	return "{{.}}"
+}
+
+`
+	var cb bytes.Buffer
+	t := template.Must(template.New("test").Parse(tmpl))
+	if err := t.Execute(
+		&cb, structNode["__name"].(string)); err != nil {
+		log.Fatal(err)
+	}
+	return cb.Bytes()
+}
+
+func buildStructMethods(structNode gogentypes.ASTNode,
+	contentDecorators map[string]func(gogentypes.ASTNode, []byte) []byte) []byte {
+
+	methodBuilder := func(methodAggNode gogentypes.ASTNode, tmpl string) []byte {
+		result := make([]byte, 0)
+		for _, method := range astutil.FindTags(methodAggNode, "method", nil,0, true) {
+			methodName := strings.Title(method["__name"].(string))
+			field := method["field"].(string)
+			fieldType := method["godep"].(gogentypes.ASTNode)["typerepr"].(string)
+			titleComps := make([]string, 0)
+			for _, comp := range strings.Split(field, ".") {
+				titleComps = append(titleComps, strings.Title(comp))
+			}
+			field = strings.Join(titleComps, ".")
+
+			type params struct {
+				StructName	string
+				MethodName 	string
+				TypeRepr   	string
+				Field 		string
+			}
+
+			var cb bytes.Buffer
+			t := template.Must(template.New("test").Parse(tmpl))
+			if err := t.Execute(
+				&cb,
+				params{structNode["__name"].(string),
+					methodName,
+					fieldType,
+					field,}); err != nil {
+				log.Fatal(err)
+			}
+			result = append(result, decorateContent(method, cb.Bytes(), methodName, contentDecorators)...)
+		}
+
+		return result
+	}
+
+	result := make([]byte, 0)
+	accessorTmpl := `
+func (entity *{{ $.StructName }}) {{ $.MethodName }} () {{ $.TypeRepr }} {
+	return entity.{{ $.Field }}
+}
+
+`
+	accessorsRoot := astutil.FindTags(structNode, "accessors", nil, 3, true)
+	if len(accessorsRoot) == 1 {
+		result = append(result, methodBuilder(accessorsRoot[0], accessorTmpl)...)
+	}
+	mutatorTmpl := `
+func (entity *{{ $.StructName }}) {{ $.MethodName }} (v {{ $.TypeRepr }}) {
+	entity.{{ $.Field }} = v
+}
+
+`
+	mutatorsRoot := astutil.FindTags(structNode, "mutators", nil, 3, true)
+	if len(accessorsRoot) == 1 {
+		result = append(result, methodBuilder(mutatorsRoot[0], mutatorTmpl)...)
+	}
+	return result
+}
+
 func buildStructFooter() []byte {
 	return []byte("}\n")
 }
 
-func isAbstract(structNode gogentypes.ASTNode) bool {
-	if abstract, ok := structNode["abstract"]; ok {
-		parsed, err := strconv.ParseBool(abstract.(string))
-		if err != nil {
-			log.Fatal("Invalid boolean \"abstract\" in struct " + structNode["__name"].(string))
-		}
-		if parsed { // don't generate abstract classes
-			return true
-		}
-	}
-	return false
-}
 func buildStructContent(structNode gogentypes.ASTNode,
 	contentDecorators map[string]func(gogentypes.ASTNode, []byte) []byte) ([]byte, bool) {
-	if isAbstract(structNode) {
+	if astutil.GetBoolAtKey(structNode, "abstract", false) {
 		return nil, false
 	}
 	components := [][]byte{
@@ -143,7 +209,7 @@ func buildStructContent(structNode gogentypes.ASTNode,
 
 func StructToGoFile(structNode gogentypes.ASTNode,
 	contentDecorators map[string]func(gogentypes.ASTNode, []byte) []byte) []byte {
-	if isAbstract(structNode) {
+	if astutil.GetBoolAtKey(structNode, "abstract", false) {
 		return []byte("")
 	}
 	var structContent []byte
@@ -151,11 +217,15 @@ func StructToGoFile(structNode gogentypes.ASTNode,
 	imports := getImports(structNode)
 	structContent = append(structContent, buildImports(imports, contentDecorators)...)
 	structContent = append(structContent, []byte("\n")...)
-	structContent, concrete := buildStructContent(structNode, contentDecorators)
-	if concrete {
-		structContent = append(structContent, structContent...)
+	structContent, _ = buildStructContent(structNode, contentDecorators)
+	structContent = append(structContent, structContent...)
+	structContent = decorateContent(structNode, structContent, "typeGoFile", contentDecorators)
+	structContent = append(structContent, []byte(buildStructMethods(structNode, contentDecorators))...)
+	if astutil.GetBoolAtKey(structNode, "gen-meta", false) {
+		structContent = append(structContent, []byte(buildStructMetaMethods(structNode))...)
 	}
-	return decorateContent(structNode, structContent, "typeGoFile", contentDecorators)
+
+	return structContent
 }
 
 func PackageToGoFile(packageNode gogentypes.ASTNode,
@@ -179,11 +249,17 @@ func PackageToGoFile(packageNode gogentypes.ASTNode,
 		structContent, concrete := buildStructContent(structNode, contentDecorators)
 		if concrete {
 			packageContent = append(packageContent, structContent...)
+			packageContent = append(packageContent, []byte(buildStructMethods(structNode, contentDecorators))...)
+			if astutil.GetBoolAtKey(structNode, "gen-meta", false) {
+				packageContent = append(packageContent, []byte(buildStructMetaMethods(structNode))...)
+			}
 			needToGen = true
 		}
 	}
 	if needToGen {
-		return decorateContent(packageNode, packageContent, "typeGoFile", contentDecorators), true
+		packageContent = decorateContent(packageNode, packageContent, "typeGoFile", contentDecorators)
+		packageContent, _ := format.Source(packageContent)
+		return packageContent, true
 	} else {
 		return nil, false
 	}

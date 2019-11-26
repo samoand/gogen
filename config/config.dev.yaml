@@ -1,5 +1,5 @@
 ---
-log_level: DEBUG
+log_level: ERROR
 logtostderr: false
 alsologtostderr: true
 

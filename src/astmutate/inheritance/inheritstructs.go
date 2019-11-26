@@ -95,7 +95,10 @@ func BuildInheritedStructData(in interface{}) interface{} {
 				// be inherited
 				shouldInherit := func(subnode string) bool{
 					if subnode == "format-header" ||
-						subnode == "format-header-post-linebreaks" {
+						subnode == "format-header-post-linebreaks" ||
+						subnode == "accessors" ||
+						subnode == "mutators" ||
+						subnode == "gen-meta" {
 						return true
 					} else {
 						return false

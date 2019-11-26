@@ -15,7 +15,6 @@ type enumTmplParams struct {
 }
 
 func buildRawEnum(params enumTmplParams) []byte {
-	result := ""
 	tmpl := `
 type {{ .EnumName }} string
 
@@ -40,7 +39,6 @@ var {{ $.EnumListName }} = [...]{{ $.EnumName }} { {{- range $i, $a := .EnumValu
 		log.Fatal(err)
 	}
 	return cb.Bytes()
-	return []byte(result)
 }
 
 func BuildRawEnum(enumNode gogentypes.ASTNode) []byte {
